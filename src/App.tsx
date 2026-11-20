@@ -33,7 +33,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-right" richColors toastOptions={{ style: { fontFamily: "\"Instrument Sans\", system-ui, sans-serif", borderRadius: 14 } }} />
       <Routes>
         {/* RUTAS PÚBLICAS */}
         <Route path="/" element={<LandingPage />} />

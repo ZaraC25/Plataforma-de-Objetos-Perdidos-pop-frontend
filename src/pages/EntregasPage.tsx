@@ -1,47 +1,52 @@
+import { useState } from 'react';
 import { useSolicitudesAprobadas } from '../features/recuperacion/api/useSolicitudesAprobadas';
 import { useRegistrarEntrega } from '../features/recuperacion/api/useRegistrarEntrega';
-import { PackageCheck, CheckCircle } from 'lucide-react';
+import { PackageCheck } from 'lucide-react';
+import { PageHeader, EmptyState, LoadingState, formatDate } from '../components/ui';
 
 export function EntregasPage() {
   const { data: solicitudes, isLoading } = useSolicitudesAprobadas();
   const { mutateAsync: registrarEntrega, isPending } = useRegistrarEntrega();
+  const [confirmando, setConfirmando] = useState<number | null>(null);
 
-  if (isLoading) return <div className="text-center py-10">Cargando entregas pendientes...</div>;
-
-  const handleEntregar = async (id: number) => {
-    if(confirm('¿Confirmas que has entregado el objeto físico al estudiante?')) {
-      await registrarEntrega({ solicitudId: id });
-    }
+  const entregar = async (id: number) => {
+    await registrarEntrega({ solicitudId: id });
+    setConfirmando(null);
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Registro de Entregas (Objetos Aprobados)</h1>
+    <div className="mx-auto max-w-4xl">
+      <PageHeader
+        title="Entregas"
+        description="Solicitudes aprobadas que esperan que el estudiante recoja el objeto. Registra la entrega cuando lo tenga en sus manos."
+      />
 
-      {solicitudes?.length === 0 ? (
-        <div className="bg-white p-10 rounded-lg shadow text-center text-gray-500 flex flex-col items-center">
-          <PackageCheck size={48} className="mb-4 text-gray-400" />
-          <p>No hay objetos pendientes por entregar.</p>
-        </div>
+      {isLoading ? (
+        <LoadingState label="Cargando entregas…" />
+      ) : !solicitudes?.length ? (
+        <EmptyState icon={PackageCheck} title="No hay entregas pendientes" description="Cuando apruebes una solicitud, aparecerá aquí hasta que registres la entrega." />
       ) : (
-        <div className="space-y-4">
-          {solicitudes?.map((sol) => (
-            <div key={sol.id} className="bg-white p-5 rounded-lg shadow border-l-4 border-green-500 flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-bold text-gray-800">Solicitud #{sol.id}</h3>
-                <p className="text-sm text-gray-600 mt-1">Objeto: <strong>{sol.objetoTitulo}</strong></p>
-                <p className="text-xs text-gray-400 mt-1">Aprobada el: {new Date(sol.fechaCreacion).toLocaleDateString()}</p>
+        <ul className="panel divide-y divide-line">
+          {solicitudes.map((sol) => (
+            <li key={sol.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="font-semibold text-ink">{sol.objetoTitulo}</p>
+                <p className="mt-1 text-[13px] text-ink-soft">Solicitud #{sol.id}, aprobada el {formatDate(sol.fechaCreacion)}</p>
               </div>
-              <button 
-                onClick={() => handleEntregar(sol.id)}
-                disabled={isPending}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center gap-2 transition"
-              >
-                <CheckCircle size={20} /> Registrar Entrega
-              </button>
-            </div>
+              {confirmando === sol.id ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-ink-soft">¿Ya lo entregaste?</span>
+                  <button onClick={() => setConfirmando(null)} className="btn btn-ghost px-3 py-2">No</button>
+                  <button onClick={() => entregar(sol.id)} disabled={isPending} className="btn btn-accent px-3 py-2">Sí, registrar</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmando(sol.id)} disabled={isPending} className="btn btn-primary">
+                  <PackageCheck size={16} /> Registrar entrega
+                </button>
+              )}
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

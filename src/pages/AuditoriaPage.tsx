@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import type { ApiResponse } from '../types/api';
 import { ShieldCheck } from 'lucide-react';
+import { PageHeader, LoadingState, EmptyState, StatusBadge, formatDate, humanize } from '../components/ui';
 
 export function AuditoriaPage() {
   const { data, isLoading } = useQuery({
@@ -9,45 +10,43 @@ export function AuditoriaPage() {
     queryFn: async () => {
       const res = await api.get<ApiResponse<{ content: any[] }>>('/admin/auditoria');
       return res.data.data?.content || [];
-    }
+    },
   });
 
-  if (isLoading) return <div className="text-center py-10">Cargando historial...</div>;
-
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-        <ShieldCheck className="text-blue-600" /> Registro de Auditoría
-      </h1>
-      
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="p-4 font-semibold text-gray-600">Fecha</th>
-              <th className="p-4 font-semibold text-gray-600">Usuario</th>
-              <th className="p-4 font-semibold text-gray-600">Acción</th>
-              <th className="p-4 font-semibold text-gray-600">Entidad</th>
-              <th className="p-4 font-semibold text-gray-600">Resultado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data?.map((a: any) => (
-              <tr key={a.id} className="border-b last:border-0 hover:bg-gray-50">
-                <td className="p-4 text-gray-500">{new Date(a.fechaHora).toLocaleString()}</td>
-                <td className="p-4 font-medium">{a.usuarioResponsable?.nombre || 'Sistema'}</td>
-                <td className="p-4 text-blue-600 font-semibold">{a.accion}</td>
-                <td className="p-4">{a.entidadAfectada} #{a.registroAfectadoId}</td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${a.resultado === 'EXITO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {a.resultado}
-                  </span>
-                </td>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader title="Auditoría" description="Registro de cada acción hecha en la plataforma, quién la hizo y su resultado." />
+
+      {isLoading ? (
+        <LoadingState label="Cargando historial…" />
+      ) : !data?.length ? (
+        <EmptyState icon={ShieldCheck} title="Sin registros todavía" />
+      ) : (
+        <div className="panel overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="border-b border-line text-xs text-ink-soft">
+              <tr>
+                <th className="px-5 py-3 font-semibold">Fecha</th>
+                <th className="px-5 py-3 font-semibold">Usuario</th>
+                <th className="px-5 py-3 font-semibold">Acción</th>
+                <th className="px-5 py-3 font-semibold">Registro</th>
+                <th className="px-5 py-3 font-semibold">Resultado</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {data.map((a: any) => (
+                <tr key={a.id} className="row-hover">
+                  <td className="whitespace-nowrap px-5 py-3 tabular-nums text-ink-soft">{formatDate(a.fechaHora, true)}</td>
+                  <td className="px-5 py-3 font-medium text-ink">{a.usuarioResponsable?.nombre || 'Sistema'}</td>
+                  <td className="px-5 py-3 text-ink">{humanize(a.accion)}</td>
+                  <td className="px-5 py-3 text-ink-soft">{humanize(a.entidadAfectada)} #{a.registroAfectadoId}</td>
+                  <td className="px-5 py-3"><StatusBadge estado={a.resultado} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

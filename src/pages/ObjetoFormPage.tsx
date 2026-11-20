@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCrearObjeto } from '../features/objetos/api/useCrearObjeto';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { PageHeader, Field, CATEGORIAS, nowLocal } from '../components/ui';
 
 export function ObjetoFormPage() {
   const navigate = useNavigate();
@@ -11,96 +12,64 @@ export function ObjetoFormPage() {
     titulo: '',
     descripcion: '',
     categoria: 'ELECTRONICA',
-    fechaHallazgo: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:mm
-    ubicacion: ''
+    fechaHallazgo: nowLocal(),
+    ubicacion: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await crearObjeto(formData);
-    navigate('/'); // Volver al catálogo
+    navigate('/app');
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
-      <div className="flex items-center gap-4 mb-6 border-b pb-4">
-        <button onClick={() => navigate('/')} className="text-gray-500 hover:text-blue-600">
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-2xl font-bold text-gray-800">Registrar Objeto Encontrado</h1>
-      </div>
+    <div className="mx-auto max-w-2xl">
+      <PageHeader
+        title="Registrar objeto encontrado"
+        description="Aparecerá en el catálogo para que su dueño pueda reclamarlo."
+        backTo={{ to: '/app', label: 'Catálogo' }}
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Título del objeto</label>
-          <input
-            type="text" required
-            value={formData.titulo}
-            onChange={e => setFormData({...formData, titulo: e.target.value})}
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Ej: MacBook Pro gris"
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="panel space-y-5 p-6 sm:p-8">
+        <Field label="Nombre del objeto" htmlFor="titulo">
+          <input id="titulo" type="text" required value={formData.titulo}
+            onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
+            className="field" placeholder="Ej: MacBook Pro gris" />
+        </Field>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-            <select
-              value={formData.categoria}
-              onChange={e => setFormData({...formData, categoria: e.target.value})}
-              className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="ELECTRONICA">Electrónica</option>
-              <option value="DOCUMENTOS">Documentos</option>
-              <option value="ROPA">Ropa</option>
-              <option value="ACCESORIOS">Accesorios</option>
-              <option value="LLAVES">Llaves</option>
-              <option value="CARTERAS_BOLSOS">Carteras / Bolsos</option>
-              <option value="LIBROS_APUNTES">Libros / Apuntes</option>
-              <option value="DEPORTES">Deportes</option>
-              <option value="OTROS">Otros</option>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Categoría" htmlFor="categoria">
+            <select id="categoria" value={formData.categoria}
+              onChange={(e) => setFormData({ ...formData, categoria: e.target.value })} className="field">
+              {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de hallazgo</label>
-            <input
-              type="datetime-local" required
-              value={formData.fechaHallazgo}
-              onChange={e => setFormData({...formData, fechaHallazgo: e.target.value})}
-              className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
+          </Field>
+          <Field label="Fecha de hallazgo" htmlFor="fecha">
+            <input id="fecha" type="datetime-local" required value={formData.fechaHallazgo}
+              onChange={(e) => setFormData({ ...formData, fechaHallazgo: e.target.value })} className="field" />
+          </Field>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación exacta</label>
-          <input
-            type="text" required
-            value={formData.ubicacion}
-            onChange={e => setFormData({...formData, ubicacion: e.target.value})}
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Ej: Bloque B, salón 204"
-          />
-        </div>
+        <Field label="Dónde se encontró" htmlFor="ubicacion">
+          <input id="ubicacion" type="text" required value={formData.ubicacion}
+            onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
+            className="field" placeholder="Ej: Bloque B, salón 204" />
+        </Field>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Descripción detallada</label>
-          <textarea
-            required rows={4}
-            value={formData.descripcion}
-            onChange={e => setFormData({...formData, descripcion: e.target.value})}
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Describe características que ayuden a identificar el objeto..."
-          />
-        </div>
+        <Field label="Descripción pública" htmlFor="descripcion"
+          hint="Evita detalles que solo el dueño conoce (marcas, contenido, contraseñas): sirven para verificar la reclamación.">
+          <textarea id="descripcion" required rows={4} value={formData.descripcion}
+            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+            className="field resize-y" placeholder="Color, tamaño y rasgos generales…" />
+        </Field>
 
-        <button
-          type="submit" disabled={isPending}
-          className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 flex justify-center items-center gap-2 disabled:bg-blue-400"
-        >
-          <Save size={20} />
-          {isPending ? 'Guardando...' : 'Registrar Objeto'}
-        </button>
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+          <button type="button" onClick={() => navigate('/app')} className="btn btn-ghost">Cancelar</button>
+          <button type="submit" disabled={isPending} className="btn btn-primary">
+            {isPending && <Loader2 size={16} className="animate-spin" />}
+            {isPending ? 'Registrando…' : 'Registrar objeto'}
+          </button>
+        </div>
       </form>
     </div>
   );

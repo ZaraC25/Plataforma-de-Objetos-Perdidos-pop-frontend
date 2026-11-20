@@ -1,82 +1,81 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useObjeto } from '../features/objetos/api/useObjeto';
-import { ArrowLeft, MapPin, Calendar, Tag, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, MapPin, CalendarDays, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import { LoadingState, ErrorState, StatusBadge, categoriaLabel, folio, formatDate } from '../components/ui';
 
 export function ObjetoDetallePage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const usuario = useAuthStore((state) => state.usuario);
-  
   const { data: objeto, isLoading, isError } = useObjeto(Number(id));
 
-  if (isLoading) return <div className="text-center py-20">Cargando detalle...</div>;
-  if (isError || !objeto) return <div className="text-center py-20 text-red-500">Objeto no encontrado.</div>;
+  const back = (
+    <Link to="/app" className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-brand-dark">
+      <ArrowLeft size={16} /> Volver al catálogo
+    </Link>
+  );
+
+  if (isLoading) return <LoadingState label="Cargando objeto…" />;
+  if (isError || !objeto)
+    return (
+      <div className="mx-auto max-w-4xl">
+        {back}
+        <ErrorState label="Este objeto no existe o ya no está disponible." />
+      </div>
+    );
+
+  const puedeReclamar = usuario?.rol === 'ESTUDIANTE' && objeto.estado === 'DISPONIBLE_PARA_RECLAMACION';
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <button 
-        onClick={() => navigate('/')} 
-        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-6 transition"
-      >
-        <ArrowLeft size={20} /> Volver al catálogo
-      </button>
+    <div className="mx-auto max-w-4xl">
+      {back}
 
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="bg-blue-900 p-8 text-white">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="inline-flex items-center gap-1 bg-blue-800 px-3 py-1 rounded-full text-xs font-semibold mb-3 uppercase tracking-wide">
-                <Tag size={14} /> {objeto.categoria}
-              </span>
-              <h1 className="text-3xl font-bold">{objeto.titulo}</h1>
-            </div>
-            <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-sm">
-              {objeto.estado.replace(/_/g, ' ')}
+      <article className="tag-card overflow-hidden pl-0 hover:!translate-y-0 hover:!shadow-none">
+        <div className="border-b border-dashed border-line py-7 pl-12 pr-7 sm:pl-14">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold tabular-nums text-ink-soft">
+              {folio(objeto.id)} · {categoriaLabel(objeto.categoria)}
             </span>
+            <StatusBadge estado={objeto.estado} />
           </div>
+          <h1 className="mt-3 text-3xl font-[650] leading-tight sm:text-4xl">{objeto.titulo}</h1>
         </div>
 
-        <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Descripción</h3>
-              <p className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-lg border">
-                {objeto.descripcion}
-              </p>
-            </div>
+        <div className="grid gap-8 py-7 pl-12 pr-7 sm:pl-14 md:grid-cols-[1fr_260px]">
+          <div>
+            <h2 className="text-sm font-semibold text-ink-soft">Descripción</h2>
+            <p className="mt-2 max-w-prose leading-relaxed text-ink">{objeto.descripcion}</p>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-lg border">
-              <MapPin className="text-blue-600 mt-1" size={20} />
-              <div>
-                <p className="text-xs text-gray-500 font-medium uppercase">Ubicación</p>
-                <p className="text-gray-800 font-semibold">{objeto.ubicacion}</p>
+          <div className="space-y-5">
+            <dl className="space-y-4 text-sm">
+              <div className="flex gap-3">
+                <MapPin size={18} className="mt-0.5 shrink-0 text-brand-light" />
+                <div>
+                  <dt className="text-ink-soft">Dónde se encontró</dt>
+                  <dd className="font-semibold text-ink">{objeto.ubicacion}</dd>
+                </div>
               </div>
-            </div>
-
-            <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-lg border">
-              <Calendar className="text-blue-600 mt-1" size={20} />
-              <div>
-                <p className="text-xs text-gray-500 font-medium uppercase">Fecha Hallazgo</p>
-                <p className="text-gray-800 font-semibold">
-                  {new Date(objeto.fechaHallazgo).toLocaleDateString()}
-                </p>
+              <div className="flex gap-3">
+                <CalendarDays size={18} className="mt-0.5 shrink-0 text-brand-light" />
+                <div>
+                  <dt className="text-ink-soft">Fecha de hallazgo</dt>
+                  <dd className="font-semibold text-ink">{formatDate(objeto.fechaHallazgo, true)}</dd>
+                </div>
               </div>
-            </div>
+            </dl>
 
-            {usuario?.rol === 'ESTUDIANTE' && objeto.estado === 'DISPONIBLE_PARA_RECLAMACION' && (
-              <button 
-                onClick={() => navigate(`/solicitudes/nueva/${objeto.id}`)}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition shadow-md"
-              >
-                <ShieldAlert size={20} /> Solicitar Recuperación
-              </button>
+            {puedeReclamar && (
+              <div>
+                <Link to={`/app/solicitudes/nueva/${objeto.id}`} className="btn btn-accent btn-lg w-full">
+                  <ShieldCheck size={18} /> Es mío, quiero reclamarlo
+                </Link>
+                <p className="hint">Te pediremos detalles que solo el dueño conoce.</p>
+              </div>
             )}
           </div>
         </div>
-      </div>
+      </article>
     </div>
   );
 }

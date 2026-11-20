@@ -1,61 +1,132 @@
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useObjetos } from '../features/objetos/api/useObjetos';
-import { PackageOpen, Plus, SearchX } from 'lucide-react';
+import { PackageOpen, Plus, Search, SearchX, MapPin, CalendarDays } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import {
+  PageHeader, EmptyState, LoadingState, ErrorState, StatusBadge,
+  CATEGORIAS, categoriaLabel, folio, formatDate,
+} from '../components/ui';
 
 export function ObjetosPage() {
   const { data: objetos, isLoading, isError } = useObjetos();
   const usuario = useAuthStore((state) => state.usuario);
+  const [query, setQuery] = useState('');
+  const [categoria, setCategoria] = useState<string | null>(null);
 
-  if (isLoading) return <div className="text-center py-10 text-gray-500">Cargando catálogo...</div>;
-  if (isError) return <div className="text-center py-10 text-red-500">Error al cargar los objetos.</div>;
+  const esGestor = usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'ENCARGADO_OBJETOS_PERDIDOS';
+
+  const filtrados = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (objetos ?? []).filter((o) => {
+      if (categoria && o.categoria !== categoria) return false;
+      if (!q) return true;
+      return [o.titulo, o.descripcion, o.ubicacion].some((t) => t?.toLowerCase().includes(q));
+    });
+  }, [objetos, query, categoria]);
+
+  const presentes = useMemo(
+    () => CATEGORIAS.filter((c) => objetos?.some((o) => o.categoria === c.value)),
+    [objetos],
+  );
+
+  const action = esGestor ? (
+    <Link to="/app/encargado/objetos/nuevo" className="btn btn-primary">
+      <Plus size={18} /> Registrar objeto encontrado
+    </Link>
+  ) : (
+    <Link to="/app/mis-reportes/nuevo" className="btn btn-primary">
+      <SearchX size={18} /> Reportar objeto perdido
+    </Link>
+  );
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Catálogo de Objetos</h1>
-        
-        {/* BOTÓN DINÁMICO SEGÚN EL ROL */}
-        {(usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'ENCARGADO_OBJETOS_PERDIDOS') ? (
-          <Link 
-            to="/encargado/objetos/nuevo"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2 transition"
-          >
-            <Plus size={20} /> Registrar Objeto Encontrado
-          </Link>
-        ) : (
-          <Link 
-            to="/mis-reportes/nuevo"
-            className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 flex items-center gap-2 transition"
-          >
-            <SearchX size={20} /> Reportar Objeto Perdido
-          </Link>
-        )}
-      </div>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader
+        title="Catálogo de objetos"
+        description="Objetos entregados en la oficina de objetos perdidos. Si ves algo tuyo, ábrelo y solicita la recuperación."
+        action={action}
+      />
 
-      {objetos?.length === 0 ? (
-        <div className="bg-white p-10 rounded-lg shadow text-center text-gray-500 flex flex-col items-center">
-          <PackageOpen size={48} className="mb-4 text-gray-400" />
-          <p>No hay objetos registrados por el momento.</p>
-        </div>
+      {isLoading ? (
+        <LoadingState label="Cargando catálogo…" />
+      ) : isError ? (
+        <ErrorState label="No pudimos cargar el catálogo. Revisa tu conexión y recarga la página." />
+      ) : objetos?.length === 0 ? (
+        <EmptyState
+          icon={PackageOpen}
+          title="Aún no hay objetos registrados"
+          description="Cuando la oficina registre un objeto encontrado, aparecerá aquí."
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {objetos?.map((obj) => (
-            <Link to={`/objetos/${obj.id}`} key={obj.id} className="block group">
-              <div className="bg-white rounded-lg shadow hover:shadow-lg transition-all duration-200 p-5 border-t-4 border-blue-500 group-hover:-translate-y-1">
-                <span className="text-xs font-bold text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded">
-                  {obj.categoria}
-                </span>
-                <h3 className="text-lg font-bold text-gray-800 mt-2 group-hover:text-blue-600 transition">{obj.titulo}</h3>
-                <p className="text-gray-600 text-sm mt-2 line-clamp-2">{obj.descripcion}</p>
-                <div className="mt-4 pt-4 border-t text-sm text-gray-500">
-                  <p><strong>Ubicación:</strong> {obj.ubicacion}</p>
-                  <p><strong>Estado:</strong> {obj.estado.replace(/_/g, ' ')}</p>
-                </div>
+        <>
+          <div className="mb-6 flex flex-col gap-3">
+            <div className="relative max-w-md">
+              <Search size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar por nombre, descripción o lugar"
+                className="field pl-10"
+                aria-label="Buscar objetos"
+              />
+            </div>
+            {presentes.length > 1 && (
+              <div className="flex flex-wrap gap-2">
+                {[{ value: null as string | null, label: 'Todas' }, ...presentes].map((c) => {
+                  const active = categoria === c.value;
+                  return (
+                    <button
+                      key={c.label}
+                      onClick={() => setCategoria(c.value)}
+                      aria-pressed={active}
+                      className={`btn rounded-full px-3.5 py-1.5 text-[13px] ${
+                        active ? 'bg-brand-dark text-white' : 'border border-line bg-white text-ink-soft hover:text-ink'
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  );
+                })}
               </div>
-            </Link>
-          ))}
-        </div>
+            )}
+          </div>
+
+          {filtrados.length === 0 ? (
+            <EmptyState
+              icon={SearchX}
+              title="Nada coincide con tu búsqueda"
+              description="Prueba con otras palabras o quita el filtro de categoría. También puedes reportar el objeto como perdido."
+              action={
+                <button className="btn btn-ghost" onClick={() => { setQuery(''); setCategoria(null); }}>
+                  Limpiar filtros
+                </button>
+              }
+            />
+          ) : (
+            <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {filtrados.map((obj) => (
+                <li key={obj.id}>
+                  <Link to={`/app/objetos/${obj.id}`} className="tag-card flex h-full flex-col py-5 pl-12 pr-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-xs font-semibold tabular-nums text-ink-soft">
+                        {folio(obj.id)} · {categoriaLabel(obj.categoria)}
+                      </span>
+                      <StatusBadge estado={obj.estado} />
+                    </div>
+                    <h3 className="mt-2 text-lg font-[650] leading-snug">{obj.titulo}</h3>
+                    <p className="mt-1.5 line-clamp-2 text-sm text-ink-soft">{obj.descripcion}</p>
+                    <div className="mt-auto flex flex-wrap gap-x-4 gap-y-1 pt-4 text-[13px] text-ink-soft">
+                      <span className="flex items-center gap-1.5"><MapPin size={14} /> {obj.ubicacion}</span>
+                      <span className="flex items-center gap-1.5"><CalendarDays size={14} /> {formatDate(obj.fechaHallazgo)}</span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );
