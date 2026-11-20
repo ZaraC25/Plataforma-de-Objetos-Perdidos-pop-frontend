@@ -20,13 +20,13 @@ const CATEGORIA_LABEL: Record<string, string> = {
   OTROS: 'Otros',
 };
 
-function CoincidenciaCard({ c, showUser }: { c: Coincidencia; showUser: boolean }) {
+function CoincidenciaCard({ c, showUser, porIA }: { c: Coincidencia; showUser: boolean; porIA: boolean }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
       {/* Badge IA */}
       <div className="mb-4 flex items-center gap-2">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
-          <Sparkles size={12} /> Coincidencia detectada por IA
+          <Sparkles size={12} /> {porIA ? 'Coincidencia detectada por IA' : 'Coincidencia por palabras clave'}
         </span>
       </div>
 
@@ -89,7 +89,8 @@ export function CoincidenciasPage() {
   const queryAdmin = useCoincidenciasTodos(consultado && esAdmin);
 
   const query = esAdmin ? queryAdmin : queryEstudiante;
-  const coincidencias: Coincidencia[] = query.data ?? [];
+  const coincidencias: Coincidencia[] = query.data?.items ?? [];
+  const aviso = query.data?.aviso ?? null;
   const loading = query.isFetching;
   const errorMsg = query.isError
     ? ((query.error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -133,6 +134,14 @@ export function CoincidenciasPage() {
           <RefreshCw size={32} className="animate-spin text-violet-500" />
           <p className="text-sm">Gemini está analizando las coincidencias…</p>
           <p className="text-xs text-slate-400">Esto puede tomar unos segundos</p>
+        </div>
+      )}
+
+      {/* Aviso: resultado por palabras clave porque Gemini no respondió */}
+      {consultado && !loading && !errorMsg && aviso && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-500" />
+          <p>{aviso}</p>
         </div>
       )}
 
@@ -189,6 +198,7 @@ export function CoincidenciasPage() {
               key={`${c.reporteId}-${c.objetoId}-${i}`}
               c={c}
               showUser={esAdmin}
+              porIA={!aviso}
             />
           ))}
         </div>
