@@ -3,7 +3,7 @@ import { useAuthStore } from '../stores/authStore';
 import { toast } from 'sonner';
 
 export const api = axios.create({
-  baseURL: 'https://plataforma-de-objetos-perdidos-pop-backend-production.up.railway.app/api',
+  baseURL: 'https://plataforma-de-objetos-perdidos-pop.onrender.com/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
