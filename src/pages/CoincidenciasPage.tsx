@@ -82,11 +82,10 @@ function CoincidenciaCard({ c, showUser }: { c: Coincidencia; showUser: boolean 
 export function CoincidenciasPage() {
   const usuario = useAuthStore((s) => s.usuario);
   const esAdmin = usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'ENCARGADO_OBJETOS_PERDIDOS';
-  const esEstudiante = usuario?.rol === 'ESTUDIANTE';
 
   const [consultado, setConsultado] = useState(false);
 
-  const queryEstudiante = useCoincidenciasMisReportes(consultado && esEstudiante);
+  const queryEstudiante = useCoincidenciasMisReportes(consultado && !esAdmin);
   const queryAdmin = useCoincidenciasTodos(consultado && esAdmin);
 
   const query = esAdmin ? queryAdmin : queryEstudiante;
@@ -139,7 +138,7 @@ export function CoincidenciasPage() {
           <AlertCircle size={36} className="text-slate-300" />
           <p className="font-semibold text-slate-700">No se encontraron coincidencias</p>
           <p className="text-xs text-slate-400">
-            {esEstudiante
+            {!esAdmin
               ? 'Gemini no encontró objetos disponibles que coincidan con tus reportes activos.'
               : 'No hay coincidencias detectadas entre los reportes activos y los objetos disponibles.'}
           </p>
