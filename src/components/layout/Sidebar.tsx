@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import {
   Package, Users, LogOut, Plus, FileWarning, ClipboardList,
-  PackageCheck, BarChart2, ShieldCheck, Inbox, X,
+  PackageCheck, BarChart2, ShieldCheck, Inbox, X, Sparkles,
 } from 'lucide-react';
 
 type Item = { to: string; label: string; icon: LucideIcon };
@@ -12,6 +12,7 @@ const general: Item[] = [
   { to: '/app', label: 'Catálogo', icon: Package },
   { to: '/app/mis-reportes', label: 'Mis reportes', icon: FileWarning },
   { to: '/app/mis-solicitudes', label: 'Mis solicitudes', icon: ClipboardList },
+  { to: '/app/coincidencias', label: 'Coincidencias IA', icon: Sparkles },
 ];
 
 const gestion: Item[] = [

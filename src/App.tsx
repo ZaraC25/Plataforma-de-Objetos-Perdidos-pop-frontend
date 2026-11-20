@@ -19,6 +19,7 @@ import { EntregasPage } from './pages/EntregasPage';
 import { UsuariosPage } from './pages/UsuariosPage';
 import { EstadisticasPage } from './pages/EstadisticasPage';
 import { AuditoriaPage } from './pages/AuditoriaPage';
+import { CoincidenciasPage } from './pages/CoincidenciasPage';
 
 // Layout y Estado
 import { AppShell } from './components/layout/AppShell';
@@ -67,6 +68,9 @@ export default function App() {
           <Route path="admin/usuarios" element={<UsuariosPage />} />
           <Route path="admin/estadisticas" element={<EstadisticasPage />} />
           <Route path="admin/auditoria" element={<AuditoriaPage />} />
+
+          {/* Coincidencias IA */}
+          <Route path="coincidencias" element={<CoincidenciasPage />} />
         </Route>
 
         {/* Redirección por defecto */}
