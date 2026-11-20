@@ -25,6 +25,7 @@ export function useCoincidenciasMisReportes(enabled: boolean) {
     },
     enabled,
     staleTime: 1000 * 60 * 2, // 2 minutos de caché
+    retry: false, // cada reintento es otra llamada a Gemini (límite por minuto)
   });
 }
 
@@ -37,5 +38,6 @@ export function useCoincidenciasTodos(enabled: boolean) {
     },
     enabled,
     staleTime: 1000 * 60 * 2,
+    retry: false,
   });
 }

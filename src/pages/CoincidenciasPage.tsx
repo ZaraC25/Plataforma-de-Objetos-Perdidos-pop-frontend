@@ -91,6 +91,10 @@ export function CoincidenciasPage() {
   const query = esAdmin ? queryAdmin : queryEstudiante;
   const coincidencias: Coincidencia[] = query.data ?? [];
   const loading = query.isFetching;
+  const errorMsg = query.isError
+    ? ((query.error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+      'No se pudo completar el análisis. Intenta de nuevo.')
+    : null;
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -132,8 +136,23 @@ export function CoincidenciasPage() {
         </div>
       )}
 
+      {/* Error del análisis */}
+      {consultado && !loading && errorMsg && (
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
+          <AlertCircle size={36} className="text-red-400" />
+          <p className="font-semibold text-red-700">No se pudo analizar con Gemini</p>
+          <p className="text-xs text-red-600">{errorMsg}</p>
+          <button
+            onClick={() => query.refetch()}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline"
+          >
+            <RefreshCw size={12} /> Reintentar
+          </button>
+        </div>
+      )}
+
       {/* Sin resultados */}
-      {consultado && !loading && coincidencias.length === 0 && (
+      {consultado && !loading && !errorMsg && coincidencias.length === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-12 text-center">
           <AlertCircle size={36} className="text-slate-300" />
           <p className="font-semibold text-slate-700">No se encontraron coincidencias</p>
@@ -143,7 +162,7 @@ export function CoincidenciasPage() {
               : 'No hay coincidencias detectadas entre los reportes activos y los objetos disponibles.'}
           </p>
           <button
-            onClick={() => { setConsultado(false); setTimeout(() => setConsultado(true), 100); }}
+            onClick={() => query.refetch()}
             className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline"
           >
             <RefreshCw size={12} /> Volver a analizar
@@ -159,7 +178,7 @@ export function CoincidenciasPage() {
               {coincidencias.length} coincidencia{coincidencias.length !== 1 ? 's' : ''} encontrada{coincidencias.length !== 1 ? 's' : ''}
             </p>
             <button
-              onClick={() => { setConsultado(false); setTimeout(() => setConsultado(true), 100); }}
+              onClick={() => query.refetch()}
               className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline"
             >
               <RefreshCw size={12} /> Actualizar
